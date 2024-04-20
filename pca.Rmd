@@ -1,0 +1,121 @@
+---
+title: "Mix 1 NCState PCA"
+output: html_notebook
+---
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(RcppCNPy)
+library(ggrepel)
+```
+
+
+```{r data_org}
+C <- as.matrix(read.table("data/batch-effects-experiment.cov"))
+metadata <- read_csv("data/batch-effects-experiment1-metadata.csv")
+
+e <- eigen(C)
+t <- tibble(PC1 = e$vectors[,1],
+            PC2 = e$vectors[,2])
+samples <- read_lines("data/sample_list.txt")
+temp <- add_column(t, samples)
+temp$samples <- recode(temp$samples, 
+                  'M132831_6' = 'M132777_6',
+                  'M132856_6' = 'M132802_6',
+                  'M132890_6' = 'M132836_6')
+data <- left_join(temp, metadata, by = c("samples" = "sample_ID"))
+```
+
+
+```{r pca}
+seq_shapes <- c(`NovaSeq6000` = 21,
+                `NovaSeqX` = 22)
+
+samp_colors <- c(`M018534` = "#94EB1D",
+                 `M019404` = "#EB821E",
+                 `M027822` = "#1EC0EB",
+                 `M065405` = "#C713F0",
+                 `M077101` = "#39A4C0",
+                 `M079916` = "#84B83D",
+                 `M086632` = "#333E41",
+                 `M098246` = "#503F54")
+#54483D, #48523C, #43636B, #794485, #856546, #B8783D, #A234BA, #458596, #708A4D
+ggplot(data = data,
+       mapping = aes( x = PC1,
+                      y = PC2,
+                      shape = COUNTY_F,
+                      fill = WATER_NAME)) +
+  geom_point(size = 4.5) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank()) +
+  geom_point(size = 5,
+             stroke = 0.05,
+             alpha = 0.75) +
+  scale_fill_manual(values = wn_colors) +
+  scale_shape_manual(values = county_shapes) +
+  guides(fill = guide_legend(override.aes = list(shape = 22,
+                                                 stroke = 0.5,
+                                                 size = 3)),
+         shape = guide_legend(override.aes = list(stroke = 0.5,
+                                                  size = 3))) +
+  labs(shape = "County",
+       fill = "Water Name") +
+  geom_text_repel(aes(label = data$sample_id),
+                      max.overlaps = 50)
+```
+
+
+
+```{r data_organization_old}
+C <- as.matrix(read.table("data/trout_mix1_WGS_NCState.cov"))
+metadata <- read_csv("data/trout_mix_1_metadata.csv")
+
+e <- eigen(C)
+t <- tibble(PC1 = e$vectors[,1],
+            PC2 = e$vectors[,2])
+units <- read_tsv("data/units.tsv")
+sample_id <- units$sample
+temp <- add_column(t, sample_id)
+data <- left_join(temp, metadata, by = c("sample_id" = "NMFS_DNA_ID...1"))
+```
+
+
+
+```{r pca_old}
+wn_colors <- c( `Mulkey Creek` = "deepskyblue3",
+                `Fish Creek` = "deeppink3",
+                `Lion Creek` = "firebrick3",
+                `Tamarack Creek` = "lightpink3",
+                `North Fork Clicks Creek` = "orange3",
+                `Deadman Creek` = "olivedrab3",
+                `Nacimiento River` = "seagreen3",
+                `San Lorenzo River` = "thistle3")
+county_shapes <- c( `Tulare` = 22,
+                    `Monterey` = 24,
+                    `Santa Cruz` = 25)
+
+ggplot(data = data,
+       mapping = aes( x = PC1,
+                      y = PC2,
+                      shape = COUNTY_F,
+                      fill = WATER_NAME)) +
+  geom_point(size = 4.5) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank()) +
+  geom_point(size = 5,
+             stroke = 0.05,
+             alpha = 0.75) +
+  scale_fill_manual(values = wn_colors) +
+  scale_shape_manual(values = county_shapes) +
+  guides(fill = guide_legend(override.aes = list(shape = 22,
+                                                 stroke = 0.5,
+                                                 size = 3)),
+         shape = guide_legend(override.aes = list(stroke = 0.5,
+                                                  size = 3))) +
+  labs(shape = "County",
+       fill = "Water Name") +
+  geom_text_repel(aes(label = data$sample_id),
+                      max.overlaps = 50)
+```
+
